@@ -1,7 +1,7 @@
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Extension Installed");
 });
-
+  
 // 通知を作成する関数
 let notificationId = null;
 
