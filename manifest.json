@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "HTML Notification Example",
+  "version": "1.0",
+  "permissions": [
+    "notifications"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+  
+}
