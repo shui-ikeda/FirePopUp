@@ -46,7 +46,8 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
   } else if (buttonIndex === 1) {
     // 詳しくボタンがクリックされた場合
     console.log("詳しくボタンが押されました！");
-    chrome.tabs.create({ url: "http://35.169.4.250/test.html" }); // Googleを開く(今後はデータベースに登録したその豆知識の詳細リンク)
+    chrome.tabs.create({ url: "http://35.169.4.250/test.html" }); // 詳細リンクを開く
+    
   }
 });
 
