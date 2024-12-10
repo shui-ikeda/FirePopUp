@@ -1,6 +1,6 @@
 <?php
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 
 // データベース接続情報
@@ -18,41 +18,39 @@ $conn = pg_connect($conn_string);
 
 // 接続エラーの確認
 if (!$conn) {
-    die("接続失敗: " . pg_last_error());
+    echo json_encode(["error" => "データベース接続に失敗しました", "message" => pg_last_error()]);
+    exit;
 }
 
-// SELECT文で必要なカラムを指定
-$sql = "SELECT content, detail_contents FROM sotuken"; // your_table_name を実際のテーブル名に置き換え
+// ランダムに1行のデータを取得するSQL
+$sql = "SELECT content, details_contents FROM sotuken ORDER BY RANDOM() LIMIT 1";
 
 // クエリを実行
 $result = pg_query($conn, $sql);
 
 // クエリ結果の確認
 if (!$result) {
-    die("クエリ実行失敗: " . pg_last_error());
+    echo json_encode(["error" => "クエリ実行に失敗しました", "message" => pg_last_error()]);
+    exit;
 }
 
 // データが存在する場合
 if (pg_num_rows($result) > 0) {
-    // データをHTMLテーブル形式で表示
-    echo "<table border='1'>";
-    echo "<tr><th>Content</th><th>Detail Contents</th></tr>";
+    $row = pg_fetch_assoc($result);
+    $content = htmlspecialchars($row['content'], ENT_QUOTES, 'UTF-8');
+    $details_contents = htmlspecialchars($row['details_contents'], ENT_QUOTES, 'UTF-8');
 
-    while ($row = pg_fetch_assoc($result)) {
-        echo "<tr>";
-        echo "<td>" . htmlspecialchars($row["content"]) . "</td>";
-        echo "<td>" . htmlspecialchars($row["detail_contents"]) . "</td>";
-        echo "</tr>";
-    }
-
-    echo "</table>";
+    // JSON形式で結果を返す
+    echo json_encode([
+        'content' => $content,
+        'details_contents' => $details_contents
+    ]);
 } else {
-    echo "データがありません。";
+    echo json_encode([
+        'content' => '該当するコンテンツはありません',
+        'details_contents' => '該当する詳細情報がありません'
+    ]);
 }
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 
 // 接続を閉じる
 pg_close($conn);

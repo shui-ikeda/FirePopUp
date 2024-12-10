@@ -1,9 +1,7 @@
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("Extension Installed");
-});
-
 // 通知を作成する関数
 let notificationId = null;
+let currentContentDetails = "";  // 現在のcontentを保存
+let currentDetailsContents = ""; // 現在のdetails_contentsを保存
 
 function showNotification(message, icon = "icons/icon128.png") {
   chrome.notifications.create({
@@ -26,13 +24,6 @@ function showNotification(message, icon = "icons/icon128.png") {
   });
 }
 
-// 通知を削除する関数
-function clearNotification(id) {
-  chrome.notifications.clear(id, () => {
-    console.log("Notification cleared: ", id);
-  });
-}
-
 function fetchAndNotify() {
   fetch('http://35.169.4.250/pageinfo.php')
     .then(response => {
@@ -40,27 +31,26 @@ function fetchAndNotify() {
       if (!response.ok) {
         throw new Error(`HTTPエラー: ${response.status}`);
       }
-      return response.json();
+      return response.json(); // 取得したレスポンスをJSONとしてパース
     })
     .then(data => {
       console.log("取得したデータ:", data);
-      
-      // dataが配列であることを確認
-      if (Array.isArray(data) && data.length > 0) {
-        // ランダムなインデックスを生成
-        const randomIndex = Math.floor(Math.random() * data.length);
-        const item = data[randomIndex];  // ランダムな要素にアクセス
 
-        console.log("content:", item.content);  // contentのみ表示
-        
-        // メッセージの作成（contentのみ）
-        let message = "データ取得エラー";
-        if (item.content) {
-          message = item.content;  // contentのみ表示
-        }
+      // エラーメッセージが含まれているか確認
+      if (data.error) {
+        console.log("エラー:", data.error);
+        showNotification(data.error);
+      } else if (data.content) {
+        // content のみを通知に表示
+        const message = `${data.content}`; // contentだけを表示
         showNotification(message);
+
+        // 現在のcontentとdetails_contentsを保存
+        currentContentDetails = data.content;
+        currentDetailsContents = data.details_contents;
       } else {
-        console.log("データが配列ではありません:", data);
+        console.log("データの形式が正しくありません。", data);
+        showNotification("データの形式が正しくありません。");
       }
     })
     .catch(error => {
@@ -91,6 +81,20 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
     });
   } else if (buttonIndex === 1) {
     console.log("詳しくボタンが押されました！");
-    chrome.tabs.create({ url: "http://35.169.4.250/pageinfo.php" });
+
+    // 詳しく見るボタンが押された場合、currentContentDetails と currentDetailsContents を使って URL を生成
+    const content = currentContentDetails;  // 通知に表示された内容
+    const detailsContents = currentDetailsContents;  // 詳細情報
+
+    // test.php に content と details_contents をクエリパラメータとして渡す
+    const url = `http://35.169.4.250/test.html?content=${encodeURIComponent(content)}&details_contents=${encodeURIComponent(detailsContents)}`;
+    chrome.tabs.create({ url: url });
   }
 });
+
+// 通知を削除する関数
+function clearNotification(id) {
+  chrome.notifications.clear(id, () => {
+    console.log("Notification cleared: ", id);
+  });
+}
