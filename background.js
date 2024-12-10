@@ -47,20 +47,20 @@ function fetchAndNotify() {
       
       // dataが配列であることを確認
       if (Array.isArray(data) && data.length > 0) {
-        const item = data[0];  // 配列の最初の要素にアクセス
-        console.log("category:", item.category);
-        console.log("content:", item.content);
-        console.log("details_contents:", item.details_contents);
+        // ランダムなインデックスを生成
+        const randomIndex = Math.floor(Math.random() * data.length);
+        const item = data[randomIndex];  // ランダムな要素にアクセス
+
+        console.log("content:", item.content);  // contentのみ表示
         
-        // メッセージの作成
+        // メッセージの作成（contentのみ）
         let message = "データ取得エラー";
-        if (item.category && item.content && item.details_contents) {
-          message = `${item.category}\n${item.content}\n${item.details_contents}`;
+        if (item.content) {
+          message = item.content;  // contentのみ表示
         }
         showNotification(message);
       } else {
-        console.log("データが配列ではないか、空の配列です");
-        showNotification("データの形式が正しくありません。");
+        console.log("データが配列ではありません:", data);
       }
     })
     .catch(error => {
@@ -68,9 +68,6 @@ function fetchAndNotify() {
       showNotification("データの取得に失敗しました。エラー内容をコンソールで確認してください。");
     });
 }
-
-
-
 
 // 定期的に通知を表示する関数
 function notifyEvery10Seconds() {
