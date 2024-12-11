@@ -4,15 +4,28 @@ let currentContentDetails = "";  // 現在のcontentを保存
 let currentDetailsContents = ""; // 現在のdetails_contentsを保存
 
 function showNotification(message, icon = "icons/icon128.png") {
+  // 古い通知をクリア
+  if (notificationId) {
+    chrome.notifications.clear(notificationId, () => {
+      console.log("古い通知をクリアしました。");
+      createNotification(message, icon);
+    });
+  } else {
+    createNotification(message, icon);
+  }
+}
+
+function createNotification(message, icon) {
   chrome.notifications.create({
     type: "basic",
-    iconUrl: icon,
+    iconUrl: icon,  // アイコンURLを指定
     title: "今日の豆知識",
     message: message,
-    priority: 2,
+    priority: 0, // 優先度を0に設定
+    requireInteraction: true, // ユーザー操作を待つ
     buttons: [
-      { title: "いいね 👍" },
-      { title: "詳しく見る 🔗" }
+      { title: "なるほど 👍" },  // いいねボタン
+      { title: "詳しく見る 🔗" }  // 詳しくボタン
     ]
   }, (id) => {
     notificationId = id;
@@ -24,6 +37,7 @@ function showNotification(message, icon = "icons/icon128.png") {
   });
 }
 
+// データを取得して通知を表示
 function fetchAndNotify() {
   fetch('http://35.169.4.250/pageinfo.php')
     .then(response => {
@@ -68,33 +82,27 @@ function notifyEvery10Seconds() {
 notifyEvery10Seconds();
 
 // ボタンのクリックイベントリスナー
-chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-  if (buttonIndex === 0) {
-    console.log("いいねボタンが押されました！");
-    chrome.notifications.update(notificationId, {
-      buttons: [],
-      iconUrl: "icons/good01.jpg",
-      title: "いいねが押されました！",
-      message: "あなたのフィードバックをありがとう！"
-    }, () => {
-      clearNotification(notificationId); // 自動削除
-    });
-  } else if (buttonIndex === 1) {
-    console.log("詳しくボタンが押されました！");
+chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
+  console.log("ボタンが押されました。通知ID:", id, "ボタンインデックス:", buttonIndex);
 
-    // 詳しく見るボタンが押された場合、currentContentDetails と currentDetailsContents を使って URL を生成
-    const content = currentContentDetails;  // 通知に表示された内容
-    const detailsContents = currentDetailsContents;  // 詳細情報
+  if (id === notificationId) { // 現在の通知のみ反応
+    if (buttonIndex === 0) { // いいねボタンが押された場合
+      console.log("いいねボタンが押されました！");
 
-    // test.php に content と details_contents をクエリパラメータとして渡す
-    const url = `http://35.169.4.250/test.html?content=${encodeURIComponent(content)}&details_contents=${encodeURIComponent(detailsContents)}`;
-    chrome.tabs.create({ url: url });
+      // いいねが押された通知を新規に表示
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/good01.jpg',  // アイコンを変更
+        title: 'なるほどが押されました',
+        message: 'なるほどが押されました！',
+        requireInteraction: false, // 自動で閉じる
+        buttons: [] // ボタンなし
+      });
+
+    } else if (buttonIndex === 1) { // 詳しくボタンが押された場合
+      console.log("詳しくボタンが押されました！");
+      const url = `http://35.169.4.250/test.html?content=${encodeURIComponent(currentContentDetails)}&details_contents=${encodeURIComponent(currentDetailsContents)}`;
+      chrome.tabs.create({ url: url });
+    }
   }
 });
-
-// 通知を削除する関数
-function clearNotification(id) {
-  chrome.notifications.clear(id, () => {
-    console.log("Notification cleared: ", id);
-  });
-}
