@@ -87,7 +87,7 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
 
   if (id === notificationId) { // 現在の通知のみ反応
     if (buttonIndex === 0) { // なるほどボタンが押された場合
-      console.log("なるほどボタンが押されました！");
+      console.log("へぇーボタンが押されました！");
 
       // サーバーにPOSTリクエストを送信してlikesカウントを更新
       fetch('http://35.169.4.250/test.php', {
