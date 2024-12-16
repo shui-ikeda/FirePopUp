@@ -1,12 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "HTML Notification Example",
+  "name": "今日の豆知識通知",
   "version": "1.0",
-  "permissions": [
-    "notifications"
-  ],
+  "description": "今日の豆知識を通知で表示し、いいねと詳しくボタンを提供する拡張機能。",
+  "permissions": ["notifications", "tabs"],
+  "host_permissions": ["http://35.169.4.250/*"],
   "background": {
     "service_worker": "background.js"
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "128": "icons/icon128.png"
+    }
   }
-  
 }
