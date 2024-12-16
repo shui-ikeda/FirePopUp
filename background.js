@@ -98,7 +98,7 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            console.log("なるほどカウントが更新されました！");
+            console.log("いいねカウントが更新されました！");
           } else {
             console.error("更新失敗:", data.error);
           }
@@ -109,7 +109,7 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/good01.jpg',  // アイコンを変更
-        title: 'なるほどが押されました！',
+        title: 'へぇーが押されました！',
         message: '',
         requireInteraction: false, // 自動で閉じる
         buttons: [] // ボタンなし
