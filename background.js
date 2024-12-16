@@ -107,6 +107,10 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
             }
           } catch (e) {
             console.error("JSONパースエラー:", e, "サーバー応答:", data);
+          if (data.success) {
+            console.log("いいねカウントが更新されました！");
+          } else {
+            console.error("更新失敗:", data.error);
           }
         })
         .catch(error => console.error("リクエストエラー:", error));
@@ -116,6 +120,8 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
         type: 'basic',
         iconUrl: 'icons/good01.jpg',
         title: 'いいねが保存されました！',
+        iconUrl: 'icons/good01.jpg',  // アイコンを変更
+        title: 'へぇーが押されました！',
         message: '',
         requireInteraction: false, // 自動で閉じる
         buttons: [] // ボタンなし
