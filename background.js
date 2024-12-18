@@ -78,13 +78,37 @@ function notifyEvery10Seconds() {
 // 通知を10秒ごとに表示する関数を開始
 notifyEvery10Seconds();
 
-// ボタンのクリックイベントリスナー
 chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
   console.log("ボタンが押されました。通知ID:", id, "ボタンインデックス:", buttonIndex);
 
   if (id === notificationId) { // 現在の通知のみ反応
-    if (buttonIndex === 0) { // なるほどボタンが押された場合
+    if (buttonIndex === 0) { // へぇーボタンが押された場合
       console.log("へぇーボタンが押されました！");
+
+      // 新しい通知を作成
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "icons/icon128.png", // 必要に応じて変更
+        title: "へぇーボタンが押されました！",
+        message: "へぇーボタンが押されました！詳細ボタンをクリックしてください。",
+        priority: 0,
+        requireInteraction: true,
+        buttons: [
+          { title: "詳しく見る 🔗" } // 詳細ボタンを追加
+        ]
+      }, (newNotificationId) => {
+        // 新しい通知のIDをログ出力
+        console.log("新しい通知ID: ", newNotificationId);
+
+        // イベントリスナーを新しい通知に対応
+        chrome.notifications.onButtonClicked.addListener((newId, newButtonIndex) => {
+          if (newId === newNotificationId && newButtonIndex === 0) {
+            console.log("新しい通知の詳細ボタンが押されました！");
+            const url = `http://35.169.4.250/test.html?content=${encodeURIComponent(currentContentDetails)}&details_contents=${encodeURIComponent(currentDetailsContents)}`;
+            chrome.tabs.create({ url: url });
+          }
+        });
+      });
 
       // サーバーにPOSTリクエストを送信
       fetch('http://35.169.4.250/test.php', {
@@ -111,15 +135,6 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
         })
         .catch(error => console.error("リクエストエラー:", error));
 
-      // 通知を更新
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'icons/good01.jpg',
-        title: '関心が持てました',
-        message: '',
-        requireInteraction: false, // 自動で閉じる
-        buttons: [] // ボタンなし
-      });
     } else if (buttonIndex === 1) { // 詳しくボタンが押された場合
       console.log("詳しくボタンが押されました！");
       const url = `http://35.169.4.250/test.html?content=${encodeURIComponent(currentContentDetails)}&details_contents=${encodeURIComponent(currentDetailsContents)}`;
@@ -127,3 +142,4 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
     }
   }
 });
+
