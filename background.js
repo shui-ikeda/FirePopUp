@@ -18,10 +18,10 @@ function showNotification(message, icon = "icons/icon128.png") {
 function createNotification(message, icon) {
   chrome.notifications.create({
     type: "basic",
-    iconUrl: icon,
+    iconUrl: "icons/icon128.png",
     title: "今日の豆知識",
     message: message,
-    priority: 0, // 優先度を0に設定
+    priority: 2, // 優先度を2に設定
     requireInteraction: true, // ユーザー操作を待つ
     buttons: [
       { title: "へぇー 😮" }, // いいねボタン
@@ -30,7 +30,7 @@ function createNotification(message, icon) {
   }, (id) => {
     notificationId = id;
     if (chrome.runtime.lastError) {
-      console.error("Error creating notification: ", chrome.runtime.lastError);
+      console.error("Error creating notification: ", chrome.runtime.lastError.message);
     } else {
       console.log("Notification created with ID: ", notificationId);
     }
@@ -142,4 +142,5 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
     }
   }
 });
+
 
