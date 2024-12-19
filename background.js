@@ -90,7 +90,7 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
         type: "basic",
         iconUrl: "icons/icon128.png", // 必要に応じて変更
         title: "へぇーボタンが押されました！",
-        message: "へぇーボタンが押されました！詳細ボタンをクリックしてください。",
+        message: "へぇーボタンが押されました！詳細ボタンをクリックして知識を深めましょう！",
         priority: 0,
         requireInteraction: true,
         buttons: [
