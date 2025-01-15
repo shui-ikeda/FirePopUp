@@ -1,10 +1,9 @@
-// 通知を作成する関数
 let notificationId = null;
 let currentContentDetails = ""; // 現在のcontentを保存
 let currentDetailsContents = ""; // 現在のdetails_contentsを保存
 
+// 通知を表示
 function showNotification(message, icon = "icons/icon128.png") {
-  // 古い通知をクリア
   if (notificationId) {
     chrome.notifications.clear(notificationId, () => {
       console.log("古い通知をクリアしました。");
@@ -15,17 +14,19 @@ function showNotification(message, icon = "icons/icon128.png") {
   }
 }
 
+// 通知の作成
 function createNotification(message, icon) {
+  console.log("通知を作成: ", message);
   chrome.notifications.create({
     type: "basic",
-    iconUrl: "icons/icon128.png",
-    title: "今日の豆知識",
+    iconUrl: icon,
+    title: "豆知識通知",
     message: message,
-    priority: 2, // 優先度を2に設定
-    requireInteraction: true, // ユーザー操作を待つ
+    priority: 2,
+    requireInteraction: true,
     buttons: [
-      { title: "へぇー 😮" }, // いいねボタン
-      { title: "詳しく見る 🔗" } // 詳しくボタン
+      { title: "へぇー" }, // へぇーボタン
+      { title: "詳しく見る 🔗" } // 詳細ボタン
     ]
   }, (id) => {
     notificationId = id;
@@ -37,47 +38,7 @@ function createNotification(message, icon) {
   });
 }
 
-// データを取得して通知を表示
-function fetchAndNotify() {
-  fetch('http://35.169.4.250/pageinfo.php')
-    .then(response => {
-      console.log("HTTPステータス:", response.status);
-      if (!response.ok) {
-        throw new Error(`HTTPエラー: ${response.status}`);
-      }
-      return response.json(); // 取得したレスポンスをJSONとしてパース
-    })
-    .then(data => {
-      console.log("取得したデータ:", data);
-
-      if (data.error) {
-        console.log("エラー:", data.error);
-        showNotification(data.error);
-      } else if (data.content) {
-        const message = `${data.content}`; // contentだけを表示
-        showNotification(message);
-
-        currentContentDetails = data.content;
-        currentDetailsContents = data.details_contents;
-      } else {
-        console.log("データの形式が正しくありません。", data);
-        showNotification("データの形式が正しくありません。");
-      }
-    })
-    .catch(error => {
-      console.error('Fetchエラー:', error);
-      showNotification("データの取得に失敗しました。エラー内容をコンソールで確認してください。");
-    });
-}
-
-// 定期的に通知を表示する関数
-function notifyEvery10Seconds() {
-  setInterval(fetchAndNotify, 10000);
-}
-
-// 通知を10秒ごとに表示する関数を開始
-notifyEvery10Seconds();
-
+// 通知ボタンがクリックされたときの処理
 chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
   console.log("ボタンが押されました。通知ID:", id, "ボタンインデックス:", buttonIndex);
 
@@ -97,10 +58,9 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
           { title: "詳しく見る 🔗" } // 詳細ボタンを追加
         ]
       }, (newNotificationId) => {
-        // 新しい通知のIDをログ出力
         console.log("新しい通知ID: ", newNotificationId);
 
-        // イベントリスナーを新しい通知に対応
+        // 新しい通知のボタンがクリックされた場合
         chrome.notifications.onButtonClicked.addListener((newId, newButtonIndex) => {
           if (newId === newNotificationId && newButtonIndex === 0) {
             console.log("新しい通知の詳細ボタンが押されました！");
@@ -122,18 +82,26 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
         })
         .then(data => {
           console.log("サーバー応答:", data);
-          try {
-            const jsonData = JSON.parse(data);
+          
+          // サーバー応答が複数のJSONオブジェクトを含む場合、正しくパースするために分割
+          const jsonObjects = data.split('}{').map((item, index, array) => {
+            if (index > 0) item = '{' + item; // 開始部分の '{' を再追加
+            if (index < array.length - 1) item = item + '}'; // 終了部分の '}' を再追加
+            return JSON.parse(item); // 各部分をパース
+          });
+
+          // 各JSONオブジェクトを処理
+          jsonObjects.forEach(jsonData => {
             if (jsonData.success) {
-              console.log("いいねカウントが更新されました！");
+              console.log("成功:", jsonData.message);
             } else {
-              console.error("更新失敗:", jsonData.error);
+              console.error("エラー:", jsonData.message);
             }
-          } catch (e) {
-            console.error("JSONパースエラー:", e, "サーバー応答:", data);
-          }
+          });
         })
-        .catch(error => console.error("リクエストエラー:", error));
+        .catch(error => {
+          console.error("リクエストエラー:", error);
+        });
 
     } else if (buttonIndex === 1) { // 詳しくボタンが押された場合
       console.log("詳しくボタンが押されました！");
@@ -143,4 +111,132 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
   }
 });
 
+// 時刻指定のポップアップを表示
+function showTimeSettingNotification() {
+  chrome.notifications.create({
+    type: "basic",
+    iconUrl: "icons/icon128.png",
+    title: "通知時刻設定",
+    message: "時刻を指定してください。",
+    priority: 2,
+    requireInteraction: true,
+    buttons: [
+      { title: "時刻を指定" }
+    ]
+  });
+}
 
+// 時刻を指定するフォームを表示
+function setNotificationTimeForm() {
+  const formHTML = `
+    <div style="text-align: center; padding: 10px;">
+      <h3>通知時刻を設定</h3>
+      <input type="time" id="notificationTime" required>
+      <button onclick="saveNotificationTime()">保存</button>
+    </div>
+  `;
+
+  const popup = window.open("", "timeSettingPopup", "width=300,height=200");
+  popup.document.write(formHTML);
+}
+
+// 時刻を保存
+function saveNotificationTime() {
+  const popup = window.open("", "timeSettingPopup");
+  const timeValue = popup.document.getElementById("notificationTime").value;
+
+  if (timeValue) {
+    const [hour, minute] = timeValue.split(":").map(num => parseInt(num, 10));
+    if (hour >= 0 && hour < 24 && minute >= 0 && minute < 60) {
+      const notifyTime = new Date();
+      notifyTime.setHours(hour, minute, 0, 0); // 時刻を設定
+
+      // 時刻をChromeのストレージに保存
+      chrome.storage.local.set({ 'notifyTime': notifyTime.getTime() }, function() {
+        console.log('通知時刻が保存されました: ' + notifyTime.toLocaleTimeString());
+
+        // 時刻が保存された直後に通知を更新する処理を呼び出す
+        setDailyNotification(notifyTime); // 通知を更新する
+
+        // 設定後すぐに通知を表示
+        fetchAndNotify(); // 通知内容を即座に表示
+
+        // 直後にログを表示
+        console.log('時刻設定後に通知が表示されました。');
+      });
+
+      popup.close();
+    } else {
+      alert('無効な時刻形式です。正しい時刻を入力してください。');
+    }
+  } else {
+    alert('時刻が入力されませんでした。');
+  }
+}
+
+// 時刻設定後、通知が正しくスケジュールされているか確認
+function setDailyNotification(targetTime) {
+  console.log("setDailyNotification: 次回通知時刻:", targetTime);
+  const now = new Date();
+  let timeUntilNotification = targetTime - now;
+
+  if (timeUntilNotification < 0) {
+    targetTime.setDate(targetTime.getDate() + 1);
+    timeUntilNotification = targetTime - now;
+  }
+
+  console.log("次回通知までの時間 (ミリ秒):", timeUntilNotification);
+
+  setTimeout(() => {
+    console.log("通知を表示します。");
+    fetchAndNotify(); // 通知内容を表示
+    setDailyNotification(targetTime); // 次回の通知を設定
+  }, timeUntilNotification); // 次回通知までの時間をセット
+}
+
+
+// fetchAndNotify の内部にログを追加
+function fetchAndNotify() {
+  console.log("fetchAndNotify: データ取得開始");
+  fetch('http://35.169.4.250/pageinfo.php')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTPエラー: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("データ取得完了:", data);
+      if (data.error) {
+        showNotification(data.error);
+      } else if (data.content) {
+        const message = `${data.content}`;
+        showNotification(message);
+
+        currentContentDetails = data.content;
+        currentDetailsContents = data.details_contents;
+      } else {
+        showNotification("データの形式が正しくありません。");
+      }
+    })
+    .catch(error => {
+      console.error('Fetchエラー:', error);
+      showNotification("データの取得に失敗しました。");
+    });
+}
+
+// 時刻設定を初期化
+function initializeNotificationTime() {
+  chrome.storage.local.get('notifyTime', (result) => {
+    if (result.notifyTime) {
+      const notifyTime = new Date(result.notifyTime);
+      console.log("設定された通知時間:", notifyTime);
+      setDailyNotification(notifyTime); // 設定された通知時間で通知を設定
+    } else {
+      // 時刻設定のポップアップを開く
+      chrome.runtime.openOptionsPage(); // 通知設定ページを開く
+    }
+  });
+}
+
+initializeNotificationTime(); // 通知時刻の設定を読み込む

@@ -3,14 +3,22 @@
   "name": "今日の豆知識通知",
   "version": "1.0",
   "description": "今日の豆知識を通知で表示し、いいねと詳しくボタンを提供する拡張機能。",
-  "permissions": ["notifications", "tabs"],
-  "host_permissions": ["http://35.169.4.250/*"],
+  "permissions": [
+    "notifications",
+    "tabs",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://35.169.4.250/*"
+  ],  
   "background": {
     "service_worker": "background.js"
   },
   "icons": {
     "128": "icons/icon128.png"
   },
+  "options_page": "popup.html",
   "action": {
     "default_icon": {
       "128": "icons/icon128.png"
