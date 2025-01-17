@@ -2,7 +2,49 @@ let notificationId = null;
 let currentContentDetails = ""; // 現在のcontentを保存
 let currentDetailsContents = ""; // 現在のdetails_contentsを保存
 
-// 通知を表示
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("拡張機能がインストールされました");
+
+  // 通知時刻が設定されている場合
+  chrome.storage.local.get('notifyTime', (result) => {
+    if (result.notifyTime) {
+      const notifyTime = new Date(result.notifyTime);
+      console.log("設定された通知時間:", notifyTime);
+      setNotificationAtTime(notifyTime);
+    } else {
+      console.log("通知時間が設定されていません");
+    }
+  });
+});
+
+// 時刻に基づいて通知をスケジュールする
+function setNotificationAtTime(targetTime) {
+  const now = new Date();
+  let timeUntilNotification = targetTime - now;
+
+  // 時刻が過ぎている場合、次の日に設定
+  if (timeUntilNotification < 0) {
+    targetTime.setDate(targetTime.getDate() + 1);
+    timeUntilNotification = targetTime - now;
+  }
+  
+  console.log("次回通知までの時間 (ミリ秒):", timeUntilNotification);
+
+  // アラームを設定（指定した時刻に通知をトリガー）
+  chrome.alarms.create("notificationAlarm", {
+    when: now.getTime() + timeUntilNotification
+  });
+}
+
+// アラームイベントのリスナー
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "notificationAlarm") {
+    console.log("指定した時刻になりました。通知を表示します。");
+    fetchAndNotify(); // 通知を表示
+  }
+});
+
+// 通知を表示する関数
 function showNotification(message, icon = "icons/icon128.png") {
   if (notificationId) {
     chrome.notifications.clear(notificationId, () => {
@@ -37,8 +79,6 @@ function createNotification(message, icon) {
     }
   });
 }
-
-// 通知ボタンがクリックされたときの処理
 chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
   console.log("ボタンが押されました。通知ID:", id, "ボタンインデックス:", buttonIndex);
 
@@ -64,14 +104,14 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
         chrome.notifications.onButtonClicked.addListener((newId, newButtonIndex) => {
           if (newId === newNotificationId && newButtonIndex === 0) {
             console.log("新しい通知の詳細ボタンが押されました！");
-            const url = `http://35.169.4.250/test.html?content=${encodeURIComponent(currentContentDetails)}&details_contents=${encodeURIComponent(currentDetailsContents)}`;
+            const url = `http://3.211.139.122/test.html?content=${encodeURIComponent(currentContentDetails)}&details_contents=${encodeURIComponent(currentDetailsContents)}`;
             chrome.tabs.create({ url: url });
           }
         });
       });
 
       // サーバーにPOSTリクエストを送信
-      fetch('http://35.169.4.250/test.php', {
+      fetch('http://3.211.139.122/test.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `content_id=${encodeURIComponent(currentContentDetails)}`
@@ -105,28 +145,42 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
 
     } else if (buttonIndex === 1) { // 詳しくボタンが押された場合
       console.log("詳しくボタンが押されました！");
-      const url = `http://35.169.4.250/test.html?content=${encodeURIComponent(currentContentDetails)}&details_contents=${encodeURIComponent(currentDetailsContents)}`;
+      const url = `http://3.211.139.122/test.html?content=${encodeURIComponent(currentContentDetails)}&details_contents=${encodeURIComponent(currentDetailsContents)}`;
       chrome.tabs.create({ url: url });
     }
   }
 });
 
-// 時刻指定のポップアップを表示
-function showTimeSettingNotification() {
-  chrome.notifications.create({
-    type: "basic",
-    iconUrl: "icons/icon128.png",
-    title: "通知時刻設定",
-    message: "時刻を指定してください。",
-    priority: 2,
-    requireInteraction: true,
-    buttons: [
-      { title: "時刻を指定" }
-    ]
-  });
+// データを取得し通知を表示
+function fetchAndNotify() {
+  fetch('http://3.211.139.122/pageinfo.php')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTPエラー: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("データ取得完了:", data);
+      if (data.error) {
+        showNotification(data.error);
+      } else if (data.content) {
+        const message = `${data.content}`;
+        showNotification(message);
+
+        currentContentDetails = data.content;
+        currentDetailsContents = data.details_contents;
+      } else {
+        showNotification("データの形式が正しくありません。");
+      }
+    })
+    .catch(error => {
+      console.error('Fetchエラー:', error);
+      showNotification("データの取得に失敗しました。");
+    });
 }
 
-// 時刻を指定するフォームを表示
+// 時刻設定ページを表示
 function setNotificationTimeForm() {
   const formHTML = `
     <div style="text-align: center; padding: 10px;">
@@ -155,17 +209,12 @@ function saveNotificationTime() {
       chrome.storage.local.set({ 'notifyTime': notifyTime.getTime() }, function() {
         console.log('通知時刻が保存されました: ' + notifyTime.toLocaleTimeString());
 
-        // 時刻が保存された直後に通知を更新する処理を呼び出す
-        setDailyNotification(notifyTime); // 通知を更新する
-
         // 設定後すぐに通知を表示
+        setNotificationAtTime(notifyTime); // 通知を設定
         fetchAndNotify(); // 通知内容を即座に表示
 
-        // 直後にログを表示
-        console.log('時刻設定後に通知が表示されました。');
+        popup.close();
       });
-
-      popup.close();
     } else {
       alert('無効な時刻形式です。正しい時刻を入力してください。');
     }
@@ -173,6 +222,8 @@ function saveNotificationTime() {
     alert('時刻が入力されませんでした。');
   }
 }
+
+
 
 // 時刻設定後、通知が正しくスケジュールされているか確認
 function setDailyNotification(targetTime) {
@@ -194,11 +245,10 @@ function setDailyNotification(targetTime) {
   }, timeUntilNotification); // 次回通知までの時間をセット
 }
 
-
 // fetchAndNotify の内部にログを追加
 function fetchAndNotify() {
   console.log("fetchAndNotify: データ取得開始");
-  fetch('http://35.169.4.250/pageinfo.php')
+  fetch('http://3.211.139.122/pageinfo.php')
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTPエラー: ${response.status}`);

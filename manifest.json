@@ -10,8 +10,8 @@
     "alarms"
   ],
   "host_permissions": [
-    "http://35.169.4.250/*"
-  ],  
+    "http://3.211.139.122/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
