@@ -67,7 +67,7 @@ function createNotification(message, icon) {
     priority: 2,
     requireInteraction: true,
     buttons: [
-      { title: "へぇー" }, // へぇーボタン
+      { title: "へぇ～ 😲" }, // へぇーボタン
       { title: "詳しく見る 🔗" } // 詳細ボタン
     ]
   }, (id) => {
@@ -84,14 +84,14 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
 
   if (id === notificationId) { // 現在の通知のみ反応
     if (buttonIndex === 0) { // へぇーボタンが押された場合
-      console.log("へぇーボタンが押されました！");
+      console.log("へぇ～ボタンが押されました！");
 
       // 新しい通知を作成
       chrome.notifications.create({
         type: "basic",
         iconUrl: chrome.runtime.getURL("icons/icon128.png"), // 必要に応じて変更
-        title: "へぇーボタンが押されました！",
-        message: "へぇーボタンが押されました！詳細ボタンをクリックして知識を深めましょう！",
+        title: "へぇ～ボタンが押されました！",
+        message: "へぇ～ボタンが押されました！詳細ボタンをクリックして知識を深めましょう！",
         priority: 0,
         requireInteraction: true,
         buttons: [
