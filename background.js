@@ -61,7 +61,7 @@ function createNotification(message, icon) {
   console.log("通知を作成: ", message);
   chrome.notifications.create({
     type: "basic",
-    iconUrl: icon,
+    iconUrl: chrome.runtime.getURL("icons/icon128.png"),
     title: "豆知識通知",
     message: message,
     priority: 2,
@@ -89,7 +89,7 @@ chrome.notifications.onButtonClicked.addListener((id, buttonIndex) => {
       // 新しい通知を作成
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "icons/icon128.png", // 必要に応じて変更
+        iconUrl: chrome.runtime.getURL("icons/icon128.png"), // 必要に応じて変更
         title: "へぇーボタンが押されました！",
         message: "へぇーボタンが押されました！詳細ボタンをクリックして知識を深めましょう！",
         priority: 0,
